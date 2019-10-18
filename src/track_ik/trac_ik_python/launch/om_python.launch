@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="num_samples" default="10" />
+  <arg name="chain_start" default="world" />
+  <arg name="chain_end" default="end_effector_link" />
+  <arg name="timeout" default="0.005" />
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find open_manipulator_description)/urdf/open_manipulator.urdf.xacro'" />
+
+
+</launch>

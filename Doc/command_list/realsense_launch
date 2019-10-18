@@ -1,0 +1,4 @@
+roslaunch realsense2_camera rs_camera.launch filters:=pointcloud enable_infra1:=false enable_infra2:=false
+
+roslaunch realsense2_camera rs_camera.launch filters:=pointcloud
+
