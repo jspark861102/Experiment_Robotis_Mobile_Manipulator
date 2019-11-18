@@ -1,0 +1,51 @@
+#unknown
+chmod +x setup_general.sh setup_robot_computer_18_04.sh
+
+./setup_general.sh 
+sudo ./setup_robot_computer_18_04.sh
+
+#unifi
+echo 'deb http://www.ubnt.com/downloads/unifi/debian stable ubiquiti' | sudo tee /etc/apt/sources.list.d/100-ubnt-unifi.list
+
+#mongoDB
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+
+echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+
+sudo apt update.
+
+#unifi again
+sudo wget -O /etc/apt/trusted.gpg.d/unifi-repo.gpg https://dl.ubnt.com/unifi/unifi-repo.gpg
+
+sudo apt install unifi
+
+sudo gsettings set org.gnome.Vino require-encryption false
+
+sudo apt-get install python3-pip python3-numpy -y
+
+pip3 install --user hebi-py
+
+git clone https://github.com/HebiRobotics/hebi-python-examples.git
+
+git checkout curtishebi/diff_drive
+
+git status
+
+git pull origin curtishebi/diff_drive
+
+sudo chmod 777 keyboard.py
+
+sudo apt install net-tools 
+
+sudo apt install libsdl2-2.0-0 
+
+sudo apt install python-pip
+
+pip install --user hebi-py
+
+sudo apt install python-matplotlib
+
+pip install --user pygame
+
+
+gnome-terminal -x /home/hebi/hebi-python-examples/kits/diff_drive/diff_drive.py

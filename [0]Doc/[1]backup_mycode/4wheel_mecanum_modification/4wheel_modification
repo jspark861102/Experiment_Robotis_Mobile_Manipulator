@@ -1,0 +1,32 @@
+0. mechanum 교체시
+	1. turtlebot3_motor_driver.cpp의 controlMotor 부분 수정
+	2. goal_linear_velocity를 x,y로 수정 필요
+		1. turtlebot3_controller.h/cpp 수정
+		2. turtlebot3_with_open_manipulator_core_.ino 수정
+		3. ROS Teleop 수정
+                4. mecanum_modified 파일 참
+1. turtlebot3
+	1. turtlebot3_motor_driver.h
+		- 모터 4개 ID 설정
+	2. turtlebot3_motor_diver.cpp
+		- setTorque ID 별로 수행하도록 수정
+		- readEncoder ID 별로 수행하도록 수정
+		- writevelocity 4바퀴 한번에 입력하도록 수정
+		- controlMotor 8개의 바퀴위치 파라미터 받아서 각 바퀴에 속도입력 분배하도록 수정
+ 			- 이때 wheel raidus 정보는 여기에 없음, controlMotor로부터 받아옴
+2. turtlebot3_with_open_manipulator_core
+	1. turtlebot3_with_open_manipulator.h
+		1. ROBOT_RADIUS (vehicle size) 수정
+		2. WHEEL_POS_FROM_CENTER_X_1 ... 추가
+	2. turtlebot3_with_open_manipulator_core_config.h
+		1. WHEEL_NUM 및 관련 초기화 파라미터 수정
+		2. LEFT_REAR 등 ID wheel 위치 ID 수정
+	2. turtlebot3_with_open_manipulator_core.ino
+		2. setTorque ID 별로 4개로 수정
+		3. publishSensorStateMsg(void)의 readEncoder를 ID별로 받는걸로 수정
+			1. 이때 sensor_state_msg는 left/right encoder만 있어서 평균값만 올림
+		3. updateMotorInfo를 4개의 바퀴인 경우로 수정
+			1. 관련 tic, diff_tick 등 모두 수정
+		4. calOdometry의 경우 delta_s만 4개의 바퀴 평균값으로 수정
+
+

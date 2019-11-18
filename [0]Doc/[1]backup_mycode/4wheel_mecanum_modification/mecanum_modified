@@ -1,0 +1,28 @@
+turtlebot3_motor_driver.h
+ - #define WAFFLE_DXL_LIMIT_MAX_VELOCITY            300     // MAX RPM is 77 when XM is powered 12.0V
+
+turtlebot3_motor_driver.h
+ - wheel1_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity - (separation_x) * goal_angular_velocity);
+ - wheel2_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity + (separation_x) * goal_angular_velocity);
+ - wheel3_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity - (separation_x) * goal_angular_velocity);
+ - wheel4_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity + (separation_x) * goal_angular_velocity);
+
+
+turtlebot3_controller.h
+ - #define CONST_VEL 0.4
+
+turtlebot3_teleop_xboxone_jspark
+ - WAFFLE_MAX_LIN_VEL = 0.55
+ - WAFFLE_MAX_ANG_VEL = 3.88
+ - target_linear_vel   = 0.4
+
+
+turtlebot_with_open_manipulator.h
+ - #define WHEEL_RADIUS                     0.152/2           // meter
+ - #define TURNING_RADIUS                   0.350/2          // meter (BURGER : 0.080, WAFFLE : 0.1435)
+ - #define WHEEL_SEPARATION_X                0.350/2    // meter
+ - #define WHEEL_SEPARATION_Y                0.350/2   // meter
+ - #define MAX_LINEAR_VELOCITY              (WHEEL_RADIUS * 2 * 3.14159265359 * 70 / 60) // m/s  (BURGER : 61[rpm], WAFFLE : 77[rpm], mine : 70[rpm])
+ - #define MAX_ANGULAR_VELOCITY             (MAX_LINEAR_VELOCITY / TURNING_RADIUS)*10       // rad/s  <10배로 하니 잘 되는데 이유를 모르겠다...
+
+

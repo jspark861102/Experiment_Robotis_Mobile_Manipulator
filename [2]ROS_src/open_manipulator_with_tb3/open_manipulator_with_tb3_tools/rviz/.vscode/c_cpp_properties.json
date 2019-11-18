@@ -1,0 +1,39 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/jspark/catkin_ws/devel/include/**",
+                "/opt/ros/kinetic/include/**",
+                "/home/jspark/catkin_ws/src/DynamixelSDK/ros/include/**",
+                "/home/jspark/catkin_ws/src/dynamixel-workbench/dynamixel_workbench_controllers/include/**",
+                "/home/jspark/catkin_ws/src/dynamixel-workbench/dynamixel_workbench_operators/include/**",
+                "/home/jspark/catkin_ws/src/dynamixel-workbench/dynamixel_workbench_single_manager/include/**",
+                "/home/jspark/catkin_ws/src/dynamixel-workbench/dynamixel_workbench_single_manager_gui/include/**",
+                "/home/jspark/catkin_ws/src/dynamixel-workbench/dynamixel_workbench_toolbox/include/**",
+                "/home/jspark/catkin_ws/src/hls_lfcd_lds_driver/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator/open_manipulator_control_gui/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator/open_manipulator_controller/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator/open_manipulator_libs/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator/open_manipulator_moveit/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator/open_manipulator_teleop/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator_with_tb3/open_manipulator_with_tb3_tools/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator_with_tb3/open_manipulator_with_tb3_waffle_moveit/include/**",
+                "/home/jspark/catkin_ws/src/open_manipulator_with_tb3/open_manipulator_with_tb3_waffle_pi_moveit/include/**",
+                "/home/jspark/catkin_ws/src/realsense-ros/realsense2_camera/include/**",
+                "/home/jspark/catkin_ws/src/robotis_manipulator/include/**",
+                "/home/jspark/catkin_ws/src/turtlebot3/turtlebot3_slam/include/**",
+                "/usr/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
