@@ -255,7 +255,7 @@ bool Turtlebot3MotorDriver::writeVelocity(int64_t lr_value, int64_t rr_value, in
   return true;
 }
 
-
+/*
 // four diffential drive
 //bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float wheel_separation, float* value);
 bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float separation_x, const float separation_y, float* value)
@@ -296,8 +296,8 @@ bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float s
 
   return true;
 }
+*/
 
-/*
 //four mecanum wheel drive
 bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float separation_x, const float separation_y, float* value)
 {
@@ -310,15 +310,21 @@ bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float s
   float goal_angular_velocity  = value[1];
   float goal_linear_y_velocity = value[2];    
   
-  wheel1_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity - (separation_x + separation_y) * goal_angular_velocity);
-  wheel2_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity + (separation_x + separation_y) * goal_angular_velocity);
-  wheel3_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity - (separation_x + separation_y) * goal_angular_velocity);
-  wheel4_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity + (separation_x + separation_y) * goal_angular_velocity);
+  //wheel1_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity - (separation_x + separation_y) * goal_angular_velocity);
+  //wheel2_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity + (separation_x + separation_y) * goal_angular_velocity);
+  //wheel3_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity - (separation_x + separation_y) * goal_angular_velocity);
+  //wheel4_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity + (separation_x + separation_y) * goal_angular_velocity);
+
+  wheel1_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity - (separation_x) * goal_angular_velocity);
+  wheel2_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity + (separation_x) * goal_angular_velocity);
+  wheel3_spd_cmd = (goal_linear_x_velocity - goal_linear_y_velocity - (separation_x) * goal_angular_velocity);
+  wheel4_spd_cmd = (goal_linear_x_velocity + goal_linear_y_velocity + (separation_x) * goal_angular_velocity);
 
   lin_vel1  = constrain(wheel1_spd_cmd  * VELOCITY_CONSTANT_VALUE / wheel_radius, -dynamixel_limit_max_velocity_, dynamixel_limit_max_velocity_);
   lin_vel2  = constrain(wheel2_spd_cmd  * VELOCITY_CONSTANT_VALUE / wheel_radius, -dynamixel_limit_max_velocity_, dynamixel_limit_max_velocity_);
   lin_vel3  = constrain(wheel3_spd_cmd  * VELOCITY_CONSTANT_VALUE / wheel_radius, -dynamixel_limit_max_velocity_, dynamixel_limit_max_velocity_);
   lin_vel4  = constrain(wheel4_spd_cmd  * VELOCITY_CONSTANT_VALUE / wheel_radius, -dynamixel_limit_max_velocity_, dynamixel_limit_max_velocity_);
+
 
   //float wheel_velocity_cmd[2];
 
@@ -336,4 +342,4 @@ bool Turtlebot3MotorDriver::controlMotor(const float wheel_radius, const float s
     return false;
 
   return true;
-}*/
+}

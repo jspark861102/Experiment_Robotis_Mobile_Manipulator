@@ -45,12 +45,17 @@
 
 #include <math.h>
 
+#include "konfig.h"
+#include "matrix.h"
+#include "mpc.h"
+
+
 #define FIRMWARE_VER "2.0.1"
 
-#define CONTROL_MOTOR_SPEED_FREQUENCY          30   //hz
+#define CONTROL_MOTOR_SPEED_FREQUENCY          50   //hz
 #define IMU_PUBLISH_FREQUENCY                  200  //hz
-#define CMD_VEL_PUBLISH_FREQUENCY              30   //hz
-#define DRIVE_INFORMATION_PUBLISH_FREQUENCY    30   //hz
+#define CMD_VEL_PUBLISH_FREQUENCY              50   //hz
+#define DRIVE_INFORMATION_PUBLISH_FREQUENCY    50   //hz
 #define VERSION_INFORMATION_PUBLISH_FREQUENCY  1    //hz 
 #define DEBUG_LOG_FREQUENCY                    10   //hz 
 #define JOINT_CONTROL_FREQEUNCY                100  //hz 
@@ -77,7 +82,7 @@
 #define TEST_DISTANCE                    0.300     // meter
 #define TEST_RADIAN                      3.14      // 180 degree
 
-// #define DEBUG                            
+// #define DEBUG                           
 #define DEBUG_SERIAL                     SerialBT2
 
 // Callback function prototypes

@@ -1,0 +1,450 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2011, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the Willow Garage, Inc. nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+import rospy
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float64
+from sensor_msgs.msg import Joy
+from open_manipulator_msgs.msg import KinematicsPose
+
+import sys, select, os
+if os.name == 'nt':
+  import msvcrt
+else:
+  import tty, termios
+
+BURGER_MAX_LIN_VEL = 0.22
+BURGER_MAX_ANG_VEL = 2.84
+
+#WAFFLE_MAX_LIN_VEL = 0.26
+#WAFFLE_MAX_ANG_VEL = 1.82
+WAFFLE_MAX_LIN_VEL = 0.55
+WAFFLE_MAX_ANG_VEL = 3.88
+
+LIN_VEL_STEP_SIZE = 0.003
+ANG_VEL_STEP_SIZE = 0.03
+
+POSE_STEP_SIZE = 0.02
+
+msg_init = """
+Control Your Openmanpulator with TurtleBot3 !
+
+Xboxone Controller
+--------------------------------------------
+     LT                            RT
+     LB                            RB
+
+    LS_u                           Y
+LS_l    LS_r                    X     B
+    LS_d                           A
+
+        DP_u                RS_u    
+    DP_l    DP_r        RS_l    RS_r
+        DP_d                RS_d
+---------------------------------------------
+
+<<<<<<<<Manipulation>>>>>>>>
+LT/RT : girpper close/open
+Ls_u/d : increase/decrease x axis in task space (step size : 0.01m)
+Ls_l/r : increase/decrease y axis in task space (step size : 0.01m)
+Rs_u/d : increase/decrease z axis in task space (step size : 0.01m)
+Rs_l/r : null
+A : target_joint = [3.0,  0.0, -1.57, 1.20,  0.6]                
+B : target_joint = [3.0,  0.0,  0.0,   0.0,  0.0]  
+X : target_joint = [3.0, 0.0, 1.3, -1.3, -0.2]
+Y : target_joint = [3.0, 3.0, 1.3, -1.3, -0.2]
+
+<<<<<<<<Mobile>>>>>>>>
+LB/RB : 0.2m/s / 0m/s
+DP_u/d : increase/decrease linear velocity (step size : 0.003m/s)
+DP_l/r : increase/decrease angular velocity (step size : 0.03rad/s)
+
+CTRL-C to quit
+"""
+
+e = """
+Communications Failed
+"""
+
+global joy_button
+global joy_axis
+global pose_x
+global pose_y
+global pose_z    
+global ori_x
+global ori_y
+global ori_z
+global ori_w
+
+joy_button = " "
+joy_axis = " "
+pose_x = 0.0
+pose_y = 0.0
+pose_z = 0.0
+ori_x = 0.0
+ori_y = 0.0
+ori_z = 0.0
+ori_w = 0.0
+
+def vels(target_linear_vel, target_angular_vel):
+    return "currently:\tlinear vel %s\t angular vel %s " % (target_linear_vel,target_angular_vel)
+
+def makeSimpleProfile(output, input, slop):
+    if input > output:
+        output = min( input, output + slop )
+    elif input < output:
+        output = max( input, output - slop )
+    else:
+        output = input
+
+    return output
+
+def constrain(input, low, high):
+    if input < low:
+      input = low
+    elif input > high:
+      input = high
+    else:
+      input = input
+
+    return input
+
+def checkLinearLimitVelocity(vel):
+    if turtlebot3_model == "burger":
+      vel = constrain(vel, -BURGER_MAX_LIN_VEL, BURGER_MAX_LIN_VEL)
+    elif turtlebot3_model == "waffle" or turtlebot3_model == "waffle_pi":
+      vel = constrain(vel, -WAFFLE_MAX_LIN_VEL, WAFFLE_MAX_LIN_VEL)
+    else:
+      vel = constrain(vel, -BURGER_MAX_LIN_VEL, BURGER_MAX_LIN_VEL)
+
+    return vel
+
+def checkAngularLimitVelocity(vel):
+    if turtlebot3_model == "burger":
+      vel = constrain(vel, -BURGER_MAX_ANG_VEL, BURGER_MAX_ANG_VEL)
+    elif turtlebot3_model == "waffle" or turtlebot3_model == "waffle_pi":
+      vel = constrain(vel, -WAFFLE_MAX_ANG_VEL, WAFFLE_MAX_ANG_VEL)
+    else:
+      vel = constrain(vel, -BURGER_MAX_ANG_VEL, BURGER_MAX_ANG_VEL)
+
+    return vel
+
+def current_kinematics_pose_callback(msg):
+    global pose_x
+    global pose_y
+    global pose_z
+    global ori_x
+    global ori_y
+    global ori_z
+    global ori_w
+    pose_x = msg.pose.position.x
+    pose_y = msg.pose.position.y
+    pose_z = msg.pose.position.z
+    ori_x = msg.pose.orientation.x
+    ori_y = msg.pose.orientation.y
+    ori_z = msg.pose.orientation.z
+    ori_w = msg.pose.orientation.w
+
+def callback(msg): #joy topic callback
+    global joy_button
+    global joy_axis
+
+    if msg.buttons[0] == 1 :
+        joy_button = "A"        
+    elif msg.buttons[1] == 1 :
+        joy_button = "B"        
+    elif msg.buttons[2] == 1 :
+        joy_button = "X"        
+    elif msg.buttons[3] == 1 :
+        joy_button = "Y"        
+    elif msg.buttons[4] == 1 :
+        joy_button = "LB"        
+    elif msg.buttons[5] == 1 :
+        joy_button = "RB"        
+    elif msg.buttons[6] == 1 :
+        joy_button = "START"        
+    elif msg.buttons[7] == 1 :
+        joy_button = "BACK"     
+    else:
+        joy_button = ""
+
+    if msg.axes[6] == 1 :
+        joy_axis = "D-Pad_left"
+    elif msg.axes[6] == -1 :
+        joy_axis = "D-Pad_right"
+    elif msg.axes[7] == 1 :
+        joy_axis = "D_Pad_up"
+    elif msg.axes[7] == -1 :
+        joy_axis = "D_Pad_down"
+    elif msg.axes[5] < -0.9 :
+        joy_axis = "LT"
+    elif msg.axes[4] < -0.9 :
+        joy_axis = "RT"
+    elif msg.axes[0] < -0.9 :
+        joy_axis = "LS_right"
+    elif msg.axes[0] > 0.9 :
+        joy_axis = "LS_left"
+    elif msg.axes[1] < -0.9 :
+        joy_axis = "LS_down"
+    elif msg.axes[1] > 0.9 :
+        joy_axis = "LS_up"
+    elif msg.axes[2] < -0.9 :
+        joy_axis = "RS_right"
+    elif msg.axes[2] > 0.9 :
+        joy_axis = "RS_left"
+    elif msg.axes[3] < -0.9 :
+        joy_axis = "RS_down"
+    elif msg.axes[3] > 0.9 :
+        joy_axis = "RS_up"
+    else:
+        joy_axis = " "        
+
+if __name__=="__main__":
+    if os.name != 'nt':
+        settings = termios.tcgetattr(sys.stdin)
+
+#####ros init
+    rospy.init_node('turtlebot3_teleop')
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+    pub_joint = rospy.Publisher('joint_trajectory_point', Float64MultiArray, queue_size=10)
+    pub_gripper_time = rospy.Publisher('gripper_move_time', Float64, queue_size=10)
+    pub_gripper_position = rospy.Publisher('gripper_position', Float64MultiArray, queue_size=10)
+    pub_target_kinematics_pose = rospy.Publisher('target_kinematics_pose', KinematicsPose, queue_size=10)
+    sub = rospy.Subscriber('joy', Joy, callback)
+    sub_current_kinematics_pose = rospy.Subscriber('current_kinematics_pose', KinematicsPose, current_kinematics_pose_callback)
+
+    turtlebot3_model = rospy.get_param("model", "burger")
+    twist = Twist()
+    array = Float64MultiArray()
+    g_time = Float64()
+    g_position = Float64MultiArray()
+    target_kinematics_pose = KinematicsPose()
+    current_kinematics_pose = KinematicsPose()
+    
+#####parameters
+    status = 0
+    target_linear_vel   = 0.0
+    target_angular_vel  = 0.0
+    control_linear_vel  = 0.0
+    control_angular_vel = 0.0
+    target_joint = [3.0, 0.0, -1.57, 1.20, 0.6]
+    current_joint = target_joint    
+    joy_axis_previous = " "
+    pose_pub = 0
+    
+#####loop start
+    rate = rospy.Rate(100)
+    print msg_init
+    while not rospy.is_shutdown():
+
+        #if status == 20:
+        #    print msg_init
+        #    status = 0
+
+#########mobile command
+        if joy_axis == "D_Pad_up":
+            target_linear_vel = checkLinearLimitVelocity(target_linear_vel + LIN_VEL_STEP_SIZE)
+            status = status + 1
+            #print vels(target_linear_vel,target_angular_vel)
+        elif joy_axis == "D_Pad_down":
+            target_linear_vel = checkLinearLimitVelocity(target_linear_vel - LIN_VEL_STEP_SIZE)
+            status = status + 1
+            #print vels(target_linear_vel,target_angular_vel)
+        elif joy_axis == "D-Pad_left":
+            target_angular_vel = checkAngularLimitVelocity(target_angular_vel + ANG_VEL_STEP_SIZE)
+            status = status + 1
+            #print vels(target_linear_vel,target_angular_vel)
+        elif joy_axis == "D-Pad_right":
+            target_angular_vel = checkAngularLimitVelocity(target_angular_vel - ANG_VEL_STEP_SIZE)
+            status = status + 1
+            #print vels(target_linear_vel,target_angular_vel)
+        elif joy_button == " " or joy_button == "RB" :
+            target_linear_vel   = 0.0
+            control_linear_vel  = 0.0
+            target_angular_vel  = 0.0
+            control_angular_vel = 0.0
+            status = status + 1
+            #print vels(target_linear_vel, target_angular_vel)
+        elif joy_button == "LB" :
+            target_linear_vel   = 0.4
+            control_linear_vel  = 0.0
+            target_angular_vel  = 0.0
+            control_angular_vel = 0.0
+            status = status + 1
+            #print vels(target_linear_vel, target_angular_vel)
+        else:
+            if joy_button == "BACK":
+                break        
+
+        if joy_button == "LB" :
+            control_linear_vel = target_linear_vel 
+            twist.linear.x = control_linear_vel; twist.linear.y = 0.0; twist.linear.z = 0.0
+
+            control_angular_vel = target_angular_vel
+            twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel
+
+        else :
+            control_linear_vel = makeSimpleProfile(control_linear_vel, target_linear_vel, (LIN_VEL_STEP_SIZE/2.0))
+            twist.linear.x = control_linear_vel; twist.linear.y = 0.0; twist.linear.z = 0.0
+
+            control_angular_vel = makeSimpleProfile(control_angular_vel, target_angular_vel, (ANG_VEL_STEP_SIZE/2.0))
+            twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel      
+
+        pub.publish(twist)
+
+#########Manipulation to target joint
+        if joy_button == "A" :
+            target_joint = [3.0, 0.0, -1.57, 1.20, 0.6]  
+            status = status + 1              
+        elif joy_button == "B" :
+            target_joint = [3.0, 0.0, 0.0, 0.0, 0.0]  
+            status = status + 1
+
+        elif joy_button == "X" :
+            #target_joint = [3.0, 0.0, 1.3, -1.3, -0.2]
+            target_joint = [3.0,  0.0,  0.8,  0.0, -0.8]
+            status = status + 1
+        elif joy_button == "Y" :
+            #target_joint = [1.0, 3.0, 1.3, -1.3, -0.2]            
+            target_joint = [3.0,  0.0,  0.8,  -1.0,  1.57]
+            status = status + 1
+
+        if (current_joint != target_joint) :            
+            array.data = target_joint
+            pub_joint.publish(array)  
+            current_joint = target_joint   
+
+        #Manipulation in cartesian space
+        current_kinematics_pose.pose.position.x = pose_x
+        current_kinematics_pose.pose.position.y = pose_y
+        current_kinematics_pose.pose.position.z = pose_z
+        current_kinematics_pose.pose.orientation.x = ori_x
+        current_kinematics_pose.pose.orientation.y = ori_y
+        current_kinematics_pose.pose.orientation.z = ori_z
+        current_kinematics_pose.pose.orientation.w = ori_w
+        if joy_axis == "LS_down" and joy_axis_previous != "LS_down":
+            target_kinematics_pose.pose.position.x = pose_x - POSE_STEP_SIZE
+            target_kinematics_pose.pose.position.y = pose_y 
+            target_kinematics_pose.pose.position.z = pose_z  
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "LS_down"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == "LS_up" and joy_axis_previous != "LS_up":
+            target_kinematics_pose.pose.position.x = pose_x + POSE_STEP_SIZE
+            target_kinematics_pose.pose.position.y = pose_y 
+            target_kinematics_pose.pose.position.z = pose_z  
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "LS_up"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == "LS_left" and joy_axis_previous != "LS_left":
+            target_kinematics_pose.pose.position.x = pose_x 
+            target_kinematics_pose.pose.position.y = pose_y + POSE_STEP_SIZE
+            target_kinematics_pose.pose.postarget_joint_states_pub_ition.z = pose_z  
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "LS_left"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == "LS_right" and joy_axis_previous != "LS_right":
+            target_kinematics_pose.pose.position.x = pose_x 
+            target_kinematics_pose.pose.position.y = pose_y - POSE_STEP_SIZE
+            target_kinematics_pose.pose.position.z = pose_z  
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "LS_right"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == "RS_up" and joy_axis_previous != "RS_up":
+            target_kinematics_pose.pose.position.x = pose_x
+            target_kinematics_pose.pose.position.y = pose_y 
+            target_kinematics_pose.pose.position.z = pose_z + POSE_STEP_SIZE  
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "RS_up"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == "RS_down" and joy_axis_previous != "RS_down":
+            target_kinematics_pose.pose.position.x = pose_x 
+            target_kinematics_pose.pose.position.y = pose_y 
+            target_kinematics_pose.pose.position.z = pose_z - POSE_STEP_SIZE 
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w
+            joy_axis_previous = "RS_down"
+            pose_pub = 1
+            status = status + 1
+        elif joy_axis == " " :
+            target_kinematics_pose.pose.position.x = pose_x 
+            target_kinematics_pose.pose.position.y = pose_y 
+            target_kinematics_pose.pose.position.z = pose_z 
+            target_kinematics_pose.pose.orientation.x = ori_x
+            target_kinematics_pose.pose.orientation.y = ori_y
+            target_kinematics_pose.pose.orientation.z = ori_z
+            target_kinematics_pose.pose.orientation.w = ori_w 
+            joy_axis_previous = " "
+            pose_pub = 0      
+
+        if (pose_pub == 1) :            
+            pub_target_kinematics_pose.publish(target_kinematics_pose)              
+            pose_pub = 0
+
+        #girpper open/close
+        if joy_axis == "LT": #close
+            g_time.data = 1.0
+            g_position.data = [-0.015]
+            status = status + 1
+            pub_gripper_time.publish(g_time)
+            pub_gripper_position.publish(g_position)
+        elif joy_axis == "RT": #open
+            g_time.data = 0.0
+            g_position.data = [0.015]
+            status = status + 1
+            pub_gripper_time.publish(g_time)
+            pub_gripper_position.publish(g_position)
+
+        rate.sleep()
+
+    if os.name != 'nt':
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)

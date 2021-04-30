@@ -45,7 +45,7 @@ bool Turtlebot3Controller::init(float max_lin_vel, float max_ang_vel, uint8_t sc
   return true;
 }
 
-
+/*
 // four diffential drive
 //void Turtlebot3Controller::getRCdata(OpenManipulator* open_manipulator, float *get_cmd_vel, double *get_time_joint_gripper, bool &RCinput)
 void Turtlebot3Controller::getRCdata(float *get_cmd_vel, double *get_time_joint_gripper, bool &RCinput)
@@ -148,8 +148,8 @@ void Turtlebot3Controller::getRCdata(float *get_cmd_vel, double *get_time_joint_
       }          
   }
 }
+*/
 
-/*
 //four mecanum wheel drive
 void Turtlebot3Controller::getRCdata(float *get_cmd_vel, double *get_time_joint_gripper, bool &RCinput)
 {
@@ -247,4 +247,4 @@ void Turtlebot3Controller::getRCdata(float *get_cmd_vel, double *get_time_joint_
         get_time_joint_gripper[index] = time_joint_gripper[index];
       }          
   }
-}*/
+}

@@ -23,18 +23,22 @@
 
 #define NAME                             "Waffle or Waffle Pi"
 
-#define WHEEL_RADIUS                     0.033           // meter
-//#define WHEEL_SEPARATION                 0.287           // meter (BURGER : 0.160, WAFFLE : 0.287)
-#define TURNING_RADIUS                   0.1435          // meter (BURGER : 0.080, WAFFLE : 0.1435)
+//#define WHEEL_RADIUS                     0.033           // meter
+//#define TURNING_RADIUS                   0.1435          // meter (BURGER : 0.080, WAFFLE : 0.1435)
+#define WHEEL_RADIUS                     0.152/2           // meter
+#define TURNING_RADIUS                   0.350/2          // meter (BURGER : 0.080, WAFFLE : 0.1435)
 #define ROBOT_RADIUS                     0.260 //0.220           // meter (BURGER : 0.105, WAFFLE : 0.220)
 #define ENCODER_MIN                      -2147483648     // raw
 #define ENCODER_MAX                      2147483648      // raw
 
-#define WHEEL_SEPARATION_X                0.1435    // meter
-#define WHEEL_SEPARATION_Y                0.125     // meter
+//#define WHEEL_SEPARATION                 0.287           // meter (BURGER : 0.160, WAFFLE : 0.287)
+//#define WHEEL_SEPARATION_X                0.1435    // meter
+//#define WHEEL_SEPARATION_Y                0.125     // meter
+#define WHEEL_SEPARATION_X                0.350/2    // meter
+#define WHEEL_SEPARATION_Y                0.350/2   // meter
 
-#define MAX_LINEAR_VELOCITY              (WHEEL_RADIUS * 2 * 3.14159265359 * 77 / 60) // m/s  (BURGER : 61[rpm], WAFFLE : 77[rpm])
-#define MAX_ANGULAR_VELOCITY             (MAX_LINEAR_VELOCITY / TURNING_RADIUS)       // rad/s
+#define MAX_LINEAR_VELOCITY              (WHEEL_RADIUS * 2 * 3.14159265359 * 70 / 60) // m/s  (BURGER : 61[rpm], WAFFLE : 77[rpm], mine : 70[rpm])
+#define MAX_ANGULAR_VELOCITY             (MAX_LINEAR_VELOCITY / TURNING_RADIUS)*10       // rad/s
 
 #define MIN_LINEAR_VELOCITY              -MAX_LINEAR_VELOCITY  
 #define MIN_ANGULAR_VELOCITY             -MAX_ANGULAR_VELOCITY 

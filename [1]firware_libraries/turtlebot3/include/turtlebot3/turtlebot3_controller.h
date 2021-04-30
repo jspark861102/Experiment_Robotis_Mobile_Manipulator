@@ -25,7 +25,7 @@
 
 //#include <open_manipulator_libs.h>
 
-#define CONST_VEL 0.2
+#define CONST_VEL 0.4
 
 #define VELOCITY_LINEAR_X                0.01   // m/s
 #define VELOCITY_LINEAR_Y                0.01   // m/s

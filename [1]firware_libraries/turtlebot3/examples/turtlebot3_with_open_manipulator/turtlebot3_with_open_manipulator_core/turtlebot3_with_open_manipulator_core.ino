@@ -17,9 +17,6 @@
 /* Authors: Yoonseok Pyo, Leon Jung, Darby Lim, HanCheol Cho */
 
 #include "turtlebot3_with_open_manipulator_core_config.h"
-//#include <open_manipulator_libs.h>
-//OpenManipulator open_manipulator;
-
 
 /*******************************************************************************
 * Setup function
@@ -84,6 +81,8 @@ void setup()
 *******************************************************************************/
 void loop()
 {
+  //uint32_t t_start = micros();      
+
   uint32_t t = millis();
   updateTime();
   updateVariable(nh.connected());
@@ -171,6 +170,10 @@ void loop()
 
   // Wait the serial link time to process
   waitForSerialLink(nh.connected());
+
+  //uint32_t t_end = micros();
+  //uint32_t t_d = t_end - t_start;
+  //Serial.print("time"); Serial.println(t_d);    
 }
 
 /*******************************************************************************
@@ -1170,4 +1173,8 @@ void sendDebuglog(void)
   DEBUG_SERIAL.print("         x : "); DEBUG_SERIAL.println(odom_pose[0]);
   DEBUG_SERIAL.print("         y : "); DEBUG_SERIAL.println(odom_pose[1]);
   DEBUG_SERIAL.print("     theta : "); DEBUG_SERIAL.println(odom_pose[2]);
+
+  DEBUG_SERIAL.print("     MIN_ANG : "); DEBUG_SERIAL.println(MIN_ANGULAR_VELOCITY);
+
+
 }
